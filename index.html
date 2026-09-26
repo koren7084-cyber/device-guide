@@ -1,4 +1,4 @@
-<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>מאגר זיהוי הציוד</title><meta name="description" content="מאגר זיהוי הציוד: כדור תלת־ממדי, קטלוג מכשירים עם תמונות, 360°, פירוק אינטראקטיבי והסבר לכל חלק."><meta name="theme-color" content="#05080f"><style>body{margin:0;background:#05080f}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>מאגר זיהוי הציוד</title><meta name="description" content="מאגר זיהוי הציוד: כדור תלת־ממדי, קטלוג מכשירים עם תמונות, 360°, פירוק אינטראקטיבי והסבר לכל חלק."><meta name="theme-color" content="#05080f"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>body{margin:0;background:#05080f}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@500;700;800;900&family=Rubik:wght@400;500;700&display=swap">
@@ -1987,7 +1987,7 @@ drawerScrim.addEventListener("click", closeDrawer);
   }
 })();
 
-window.__guideSelect=selectDeviceById;window.__guideCats=CATEGORIES;
+window.__guideSelect=selectDeviceById;window.__guideCats=CATEGORIES;window.__guideTap=function(){ if(stageMode==="closed") onStageTap(); };
 renderApp();
 })();
 </script>
@@ -2936,6 +2936,7 @@ function openDevice(id, push){
         '<div class="dev-main" id="devMain"><img id="devImg" alt="' + esc(d.name) + '" src="' + imgs[0].src + '">' +
           '' +
           '<span class="dev-hint" id="devHint" hidden>גררו ימינה ושמאלה כדי לסובב</span>' +
+          '<span class="dev-tap" id="devTap">הקישו על המכשיר כדי לפתוח ולפרק אותו</span>' +
           '<span class="dev-cap" id="devCap">' + esc(imgs[0].cap) + '</span></div>' +
         '<div class="dev-views" id="devViews" role="group" aria-label="בחירת מבט">' + views.map(function(v, i){
           return '<button data-v="' + i + '" aria-pressed="' + (i === 0) + '">' + v.label + '</button>';
@@ -2981,6 +2982,7 @@ function setMode(m){
   var main = document.getElementById("devMain");
   main.classList.toggle("is360", m === "360");
   document.getElementById("devHint").hidden = m !== "360";
+  document.getElementById("devTap").hidden = m === "360";
   if (m === "360"){ frame = 0; fadeTo(frames[0]); document.getElementById("devCap").textContent = "360° · זווית 1 מתוך " + frames.length; pressView(dev._views.length - 1); dev.querySelectorAll("#devThumbs button").forEach(function(b){ b.setAttribute("aria-current", "false"); }); }
   else setMain(curThumb);
 }
@@ -3002,6 +3004,13 @@ function wireDevice(){
   });
   /* 360 drag */
   var main = document.getElementById("devMain"), drag = null, acc = 0;
+  var tap = null;
+  main.addEventListener("pointerdown", function(e){ tap = {x:e.clientX, y:e.clientY}; });
+  main.addEventListener("click", function(e){
+    if (mode === "360" || !tap) return;
+    if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10) return;
+    openInteractive(cur.dev.id, true);
+  });
   main.addEventListener("pointerdown", function(e){
     if (mode !== "360") return;
     drag = {x:e.clientX}; acc = 0;
@@ -3088,9 +3097,10 @@ function hideCatalog(){
   cat.classList.remove("cat-on");
   setTimeout(function(){ cat.hidden = true; }, 600);
 }
-function openInteractive(id){
+function openInteractive(id, split){
   if (!select) return;
   select(id);
+  if (split) setTimeout(function(){ if (window.__guideTap) window.__guideTap(); }, 420);
   scrollTo(0, 0);
   hideCatalog();
   docEl.style.overflow = "";
@@ -3347,6 +3357,47 @@ h1,h2,h3,h4{font-weight:700 !important}
 .ai-msg.user, .ai-send-btn{background:linear-gradient(135deg, #22d3ee, #38bdf8) !important;color:#041018 !important}
 .toast{background:#f3f6fb !important;color:#05080f !important}
 @media (prefers-reduced-motion:reduce){ .ccard:hover{transform:none} }
+</style>
+<style id="tap-to-open">
+.dev-main:not(.is360){cursor:zoom-in}
+.dev-tap{
+  position:absolute;left:50%;bottom:14px;transform:translateX(-50%);white-space:nowrap;pointer-events:none;
+  font-size:13px;letter-spacing:.04em;color:#dff8fd;padding:7px 14px;border-radius:999px;
+  background:rgba(5,8,15,.55);border:1px solid rgba(34,211,238,.4);box-shadow:0 0 18px rgba(34,211,238,.2);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  animation:tapPulse 2.6s ease-in-out infinite;
+}
+.dev-tap[hidden]{display:none}
+@keyframes tapPulse{0%,100%{box-shadow:0 0 12px rgba(34,211,238,.15)}50%{box-shadow:0 0 26px rgba(34,211,238,.4)}}
+.dev-main:hover img{transform:scale(1.03)}
+.dev-main img{transition:opacity .22s ease, transform .6s cubic-bezier(.22,.61,.36,1) !important}
+.dev-cap{display:none}
+.dev-thumbs{display:none !important}
+</style>
+<style id="mobile-fit">
+/* keep every screen inside the phone width - a single overflowing half made iOS zoom the page out */
+html, body{overflow-x:hidden}
+#app{overflow-x:clip}
+/* iOS zooms into inputs smaller than 16px - keep all text fields at 16px */
+.sp-search input, .drawer-search input, .ai-row input, .cat-search input{font-size:16px !important}
+.dev-views{display:flex !important;width:max-content;max-width:100%}
+.dev-views button{flex:none;white-space:nowrap}
+@media (max-width:980px){
+  .sp-bio{display:none}
+  .sp-enter{bottom:calc(22px + env(safe-area-inset-bottom, 0px)) !important;left:50% !important}
+  #sp.sp-listopen .sp-listbtn > span:first-child{opacity:0}
+  #sp-list{padding-top:calc(78px + env(safe-area-inset-top, 0px)) !important}
+  .sp-list-head{flex-wrap:wrap}
+}
+@media (max-width:520px){
+  .dev-views button{padding:7px 12px;font-size:13px !important}
+  .dev-tap{font-size:12px;bottom:10px}
+  .cat-head h1{font-size:40px !important}
+}
+@media (hover:none){
+  .ccard:hover{transform:none}
+  .ccard:active{transform:scale(.985)}
+}
 </style>
 
 </body></html>
