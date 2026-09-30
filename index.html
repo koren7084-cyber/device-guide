@@ -3645,19 +3645,29 @@ function init(d){
   document.getElementById("xrMarks").onclick = function(e){ var b = e.target.closest(".xr-mark"); if (b){ e.stopPropagation(); open(+b.dataset.i); } };
   render(0);
 }
+/* one calm colour per kind of component, same colour in every view */
+var PAL = ["34,211,238","251,191,36","167,139,250","74,222,128","244,114,182","251,146,60","96,165,250","226,232,240","190,242,100"];
+var GROUPS = [[/סוללה|battery/i,1],[/משטח מגע|Taptic|רטט|trackpad/i,2],[/מקלדת|keyboard/i,6],[/מעבד|cpu/i,8],[/לוח אם|motherboard/i,3],[/רמקול|speaker/i,4],[/מחבר|ציר|USB|hinge/i,5],[/מגנט|magnet/i,7],[/מסך|לוגו|מצלמה|בסיס|screen|camera/i,0]];
+function colorOf(m, seen){
+  var key = m.label + " " + (m.part || "");
+  for (var g = 0; g < GROUPS.length; g++) if (GROUPS[g][0].test(key)) return PAL[GROUPS[g][1]];
+  if (!(m.label in seen)) seen[m.label] = Object.keys(seen).length;
+  return PAL[seen[m.label] % PAL.length];
+}
 function render(k){
   vi = k; var v = XV[k]; if (!v) return;
-  var marks = v.marks || [];
+  var marks = v.marks || [], seenC = {};
+  marks.forEach(function(m){ m._c = colorOf(m, seenC); });
   var img = document.querySelector("#xrFrame > img");
   var go = function(){ nat = {w:img.naturalWidth || 4, h:img.naturalHeight || 3}; fit(); };
   if (img.getAttribute("src") !== v.src){ img.onload = go; img.src = v.src; img.style.animation = "none"; void img.offsetWidth; img.style.animation = ""; }
   if (img.complete && img.naturalWidth) go(); else img.onload = go;
   document.getElementById("xrMarks").innerHTML = marks.map(function(m, i){
     var lp = m.labelPos || (m.y < 12 ? "bottom" : "top");
-    return '<button class="xr-mark' + (m.w * m.h < 160 ? ' sm' : '') + '" style="--k:' + i + ';left:' + m.x + '%;top:' + m.y + '%;width:' + m.w + '%;height:' + m.h + '%" data-i="' + i + '" data-lp="' + lp + '" aria-label="' + esc(m.label) + '"><span>' + esc(m.label) + '</span></button>';
+    return '<button class="xr-mark' + (m.w * m.h < 160 ? ' sm' : '') + '" style="--k:' + i + ';--c:' + m._c + ';left:' + m.x + '%;top:' + m.y + '%;width:' + m.w + '%;height:' + m.h + '%" data-i="' + i + '" data-lp="' + lp + '" aria-label="' + esc(m.label) + '"><span>' + esc(m.label) + '</span></button>';
   }).join("");
   var lg = document.querySelector("#dev .xr-legend"), note = document.querySelector("#dev .xr-note");
-  if (lg){ var seen = {}; lg.innerHTML = '<em>' + esc(v.label) + ' · רכיבים:</em>' + marks.map(function(m, i){ if (seen[m.label]) return ""; seen[m.label] = 1; return '<button data-i="' + i + '">' + esc(m.label) + '</button>'; }).join(""); }
+  if (lg){ var seen = {}; lg.innerHTML = '<em>' + esc(v.label) + ' · רכיבים:</em>' + marks.map(function(m, i){ if (seen[m.label]) return ""; seen[m.label] = 1; return '<button data-i="' + i + '" style="--c:' + m._c + '"><i class="dot"></i>' + esc(m.label) + '</button>'; }).join(""); }
   if (note) note.textContent = v.note || cur.xrayNote || "לחצו על רכיב מסומן כדי לראות הסבר, תמונה של הרכיב והקטע שלו מתוך השיקוף.";
 }
 function show(on, k){
@@ -3738,6 +3748,14 @@ window.__xray = {init:init, show:show, open:open, view:function(){ return vi; }}
   .vt-tag b{display:none}
   .vt-head{margin-top:14px}
 }
+</style>
+<style id="xray-colors">
+.xr-mark{--c:34,211,238;border:1.5px solid rgba(var(--c),.95) !important;background:rgba(var(--c),.10) !important;box-shadow:0 0 0 1px rgba(5,8,15,.6), 0 0 14px rgba(var(--c),.40), inset 0 0 12px rgba(var(--c),.16) !important}
+.xr-mark:hover,.xr-mark:focus-visible,.xr-mark.on{background:rgba(var(--c),.26) !important;box-shadow:0 0 0 1px rgba(5,8,15,.6), 0 0 26px rgba(var(--c),.75), inset 0 0 18px rgba(var(--c),.3) !important;z-index:3}
+.xr-mark span{background:rgb(var(--c)) !important;color:#05080f !important}
+.xr-legend button{--c:34,211,238;display:inline-flex;align-items:center;gap:7px;border-color:rgba(var(--c),.55) !important;background:rgba(var(--c),.08) !important;color:#eef3fa}
+.xr-legend button:hover{background:rgba(var(--c),.2) !important}
+.xr-legend .dot{width:10px;height:10px;border-radius:3px;flex:none;background:rgba(var(--c),.35);border:1.5px solid rgb(var(--c));box-shadow:0 0 8px rgba(var(--c),.6)}
 </style>
 <style id="xray-mobile">
 @media (max-width:640px){
