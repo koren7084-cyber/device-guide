@@ -2479,7 +2479,7 @@ var DEVS = [];
 CATS.forEach(function(c){ c.types.forEach(function(t){ t.devices.forEach(function(d){ DEVS.push({dev:d, cat:c, type:t}); }); }); });
 var N = DEVS.length;
 var byId = {};
-DEVS.forEach(function(o, i){ byId[o.dev.id] = i; });
+DEVS.forEach(function(o, i){ byId[o.dev.id] = i; }); window.__DEVS = DEVS; window.__enterCatalog = function(id){ enterCatalog(id); };
 var partTotal = 0; DEVS.forEach(function(o){ partTotal += o.dev.parts.length; });
 $("sp-count").textContent = N + " מכשירים · " + partTotal + " חלקים";
 
@@ -4289,5 +4289,133 @@ details.sm-more > p, details.sm-more > dl{margin:8px 0 0;color:#C9D7EC;line-heig
 .ct-pop .pop-xr{color:#9CC4F5;font-size:12.5px;-webkit-line-clamp:1 !important}
 </style>
 
+
+
+<!-- ===== זיהוי מכשיר מצילום ===== -->
+<style>
+#pidBtn{position:fixed;z-index:9990;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 18px;border-radius:999px;border:0;background:#FF7A1A;color:#1A0E04;font:700 16px 'Heebo','Rubik',Arial,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.45);cursor:pointer}
+#pidBtn svg{width:22px;height:22px}
+#pidBtn:focus-visible,.pid-b:focus-visible,.pid-alt:focus-visible,#pidX:focus-visible{outline:2px solid #FFB27A;outline-offset:2px}
+#pid{position:fixed;inset:0;z-index:9995;background:rgba(2,6,14,.72);display:flex;align-items:flex-end;justify-content:center;padding:calc(12px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px))}
+.pid-card{width:min(720px,100%);max-height:100%;overflow:auto;background:#0B2340;color:#E6F0FF;border:1px solid rgba(170,205,255,.28);border-bottom:0;border-radius:14px 14px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));display:grid;gap:14px;font:400 15px/1.5 'Rubik',Arial,sans-serif;direction:rtl;text-align:right}
+.pid-top{display:flex;align-items:flex-start;gap:12px}
+.pid-top h2{margin:0;font:800 24px/1.15 'Heebo','Rubik',Arial,sans-serif;flex:1}
+.pid-top p{margin:4px 0 0;color:#A9C4E8;font-size:14px}
+#pidX{width:44px;height:44px;border-radius:8px;border:1px solid rgba(170,205,255,.28);background:transparent;color:#E6F0FF;font-size:20px;cursor:pointer;flex:none}
+.pid-cap{display:flex;gap:10px;flex-wrap:wrap}
+.pid-b{display:inline-flex;align-items:center;gap:8px;min-height:50px;padding:0 18px;border-radius:8px;border:1px solid rgba(170,205,255,.28);background:#0F2A4C;color:#E6F0FF;font:700 15px 'Heebo','Rubik',Arial,sans-serif;cursor:pointer}
+.pid-b.pri{background:#FF7A1A;border-color:#FF7A1A;color:#1A0E04}
+.pid-b svg{width:20px;height:20px}
+#pidS{display:grid;gap:6px;font-size:14px;color:#A9C4E8;background:#0F2A4C;border:1px solid rgba(170,205,255,.2);border-radius:8px;padding:10px 12px}
+.pid-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.pid-bar i{display:block;height:100%;width:0;background:#FF7A1A;transition:width .3s}
+#pidOut{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:12px;align-items:start}
+@media (max-width:600px){#pidOut{grid-template-columns:1fr}}
+#pidPic{width:100%;max-height:260px;object-fit:contain;border-radius:8px;background:#06172b}
+.pid-res{display:grid;gap:8px;min-width:0}
+.pid-best{display:grid;grid-template-columns:88px minmax(0,1fr);gap:12px;align-items:center;background:#13345C;border:1px solid rgba(170,205,255,.28);border-inline-start:5px solid #FF7A1A;border-radius:8px;padding:10px;color:inherit;font:inherit;text-align:right;cursor:pointer;width:100%}
+.pid-best img,.pid-alt img{background:#fff;border-radius:6px;object-fit:contain}
+.pid-best img{width:88px;height:88px}
+.pid-best strong{display:block;font:800 19px/1.2 'Heebo','Rubik',Arial,sans-serif}
+.pid-best em{font-style:normal;font-size:13px;color:#FFB27A}
+.pid-v{font:700 13px 'Rubik',Arial,sans-serif}
+.pid-v.hi{color:#3FCB7E}.pid-v.lo{color:#F5C451}
+.pid-alt{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:center;background:#0F2A4C;border:1px solid rgba(170,205,255,.22);border-radius:8px;padding:6px 10px;color:#E6F0FF;font:500 14px 'Rubik',Arial,sans-serif;text-align:right;cursor:pointer;width:100%}
+.pid-alt img{width:48px;height:48px}
+.pid-alt b{font-weight:500;color:#A9C4E8;font-variant-numeric:tabular-nums}
+.pid-h{margin:2px 0 0;font:700 13px 'Rubik',Arial,sans-serif;color:#A9C4E8}
+#pidBtn.on-sp{bottom:auto;top:calc(16px + env(safe-area-inset-top,0px))}
+@media (max-width:700px){#pidBtn.on-sp{top:auto;bottom:calc(96px + env(safe-area-inset-bottom,0px))}}
+.pid-note{margin:0;font-size:12.5px;color:#A9C4E8}
+@media (prefers-reduced-motion:no-preference){#pid .pid-card{animation:pidUp .28s ease-out}@keyframes pidUp{from{transform:translateY(30px);opacity:.4}}}
+</style>
+<button id="pidBtn" type="button" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>זיהוי מצילום</button>
+<div id="pid" hidden role="dialog" aria-modal="true" aria-labelledby="pidT">
+  <div class="pid-card">
+    <div class="pid-top"><div><h2 id="pidT">זיהוי מכשיר מצילום</h2><p>מצלמים מכשיר, והמערכת מחפשת אותו במאגר. לחיצה על התוצאה פותחת את דף המכשיר.</p></div><button id="pidX" type="button" aria-label="סגירה">✕</button></div>
+    <div class="pid-cap">
+      <label class="pid-b pri" for="pidCam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>צילום מכשיר</label>
+      <input id="pidCam" type="file" accept="image/*" capture="environment" hidden>
+      <label class="pid-b" for="pidGal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/></svg>תמונה מהגלריה</label>
+      <input id="pidGal" type="file" accept="image/*" hidden>
+    </div>
+    <div id="pidS" aria-live="polite"><span id="pidSt">מכין את מודל הזיהוי…</span><div class="pid-bar"><i id="pidBar"></i></div></div>
+    <div id="pidOut" hidden>
+      <img id="pidPic" alt="התמונה שצילמתם">
+      <div class="pid-res">
+        <button id="pidBest" class="pid-best" type="button"><img id="pidBImg" alt=""><span><span id="pidV" class="pid-v"></span><strong id="pidBN"></strong><em>לחצו לפתיחת דף המכשיר ←</em></span></button>
+        <p class="pid-h" id="pidAH"></p>
+        <div id="pidAlts" class="pid-res"></div>
+      </div>
+    </div>
+    <p class="pid-note">הזיהוי רץ בתוך המכשיר שלכם. התמונה לא נשלחת לשום שרת ולא נשמרת. בפעם הראשונה המודל יורד פעם אחת (בערך 200MB, עדיף ב-WiFi) ונשמר בדפדפן.</p>
+  </div>
+</div>
+<script type="module">
+const CAT = [{"n": "מברגה אלחוטית", "q": "a cordless drill driver", "img": "img/8deebcdce76e56.webp"}, {"n": "מברגת אימפקט Makita DTD172", "q": "a cordless impact driver", "img": "img/d17048fd815d8f.webp"}, {"n": "מברגת גבס Makita FS4000", "q": "a drywall screw gun with a long nose", "img": "img/feae92503d2023.webp"}, {"n": "מקדחת פטיש אלחוטית (SDS)", "q": "an SDS rotary hammer drill", "img": "img/d94f72a6ad0df2.webp"}, {"n": "פטישון Makita HR2630", "q": "a corded rotary hammer drill", "img": "img/c3a1bbd9d93371.webp"}, {"n": "משחזת זוויתית (Makita)", "q": "an angle grinder", "img": "img/07d99104127d7d.webp"}, {"n": "מסור עגול אלחוטי (Makita)", "q": "a circular saw", "img": "img/49b4be1090961b.webp"}, {"n": "מסור אנכי Makita DJV184", "q": "a jigsaw", "img": "img/10b6f689dda4f2.webp"}, {"n": "כלי חיתוך רוטט (Makita)", "q": "an oscillating multi-tool", "img": "img/b0b293cbcd1b6b.webp"}, {"n": "טרימר נטען Makita DRT50", "q": "a compact router trimmer", "img": "img/5334b83f3409a4.webp"}, {"n": "מלטשת פוליש Makita 9237CB", "q": "a car polisher buffer machine", "img": "img/c4b5aae8c1eaf1.webp"}, {"n": "אקדח מסמרים Makita DPT353", "q": "a pin nailer nail gun", "img": "img/454d895fb64158.webp"}, {"n": "מפוח/שואב Makita DUB185", "q": "a cordless leaf blower", "img": "img/8881eec41dec84.webp"}, {"n": "חרמש נטען Makita DUR192", "q": "a cordless string trimmer for grass", "img": "img/e952280af8997e.webp"}, {"n": "גוזם גדר חיה Makita DUH523", "q": "a cordless hedge trimmer", "img": "img/654017cc3779fb.webp"}, {"n": "קומפרסור קטן (מדחס אוויר)", "q": "a small portable air compressor", "img": "img/68d32a4e452d4f.webp"}, {"n": "מדחס אוויר 50 ליטר", "q": "a large air compressor with a 50 liter tank", "img": "img/c65f9d6529426c.webp"}, {"n": "מלחם (תחנת הלחמה)", "q": "a soldering station with a soldering iron", "img": "img/33bd99fbf93c6f.webp"}, {"n": "מכונת ריתוך אינוורטר (MMA)", "q": "an inverter welding machine", "img": "img/01afe73419ac2e.webp"}, {"n": "מיקרופון דינמי מקצועי", "q": "a handheld dynamic microphone", "img": "img/bd64aaa2e01415.webp"}, {"n": "מצלמה ללא מראה (Mirrorless)", "q": "a mirrorless digital camera", "img": "img/b927a007840665.webp"}, {"n": "מצלמת שידור כתף (ENG)", "q": "a shoulder broadcast video camera", "img": "img/e73fd9e735a04f.webp"}, {"n": "יחידת שידור חי (Bonded Cellular)", "q": "a bonded cellular live video transmitter backpack unit", "img": "img/fb311f0b9bfc71.webp"}, {"n": "נתב / מודם סלולרי", "q": "a 4G cellular router modem", "img": "img/f639b7db2cb12d.webp"}, {"n": "פלאש חיצוני למצלמה", "q": "a camera flash speedlight", "img": "img/3ab7d95e5a8878.webp"}, {"n": "פנס תאורה לצילום (Fresnel)", "q": "a fresnel studio spotlight", "img": "img/1c98ff76b62b89.webp"}, {"n": "רמקול בלוטות' נייד", "q": "a portable bluetooth speaker", "img": "img/128fb3b298926b.webp"}, {"n": "חצובה מקצועית לצילום", "q": "a professional video tripod", "img": "img/0a2055f291707c.webp"}, {"n": "משדר ומקלט וידאו אלחוטי", "q": "a wireless video transmitter and receiver", "img": "img/af572d2b7c576e.webp"}, {"n": "אנטנות וציוד RF", "q": "RF antennas", "img": "img/c170f6690cc912.webp"}, {"n": "מצלמת PTZ", "q": "a PTZ robotic camera", "img": "img/221a072f4524aa.webp"}, {"n": "עדשות צילום", "q": "camera lenses", "img": "img/b85529b02defb4.webp"}, {"n": "פאנל תאורת LED", "q": "an LED light panel", "img": "img/7d868adc02685e.webp"}, {"n": "מערכת מיקרופון אלחוטית", "q": "a wireless microphone system with receiver", "img": "img/541229c8afb499.webp"}, {"n": "מיקסר ומקליט קול", "q": "an audio mixer and recorder", "img": "img/714b678ddfe248.webp"}, {"n": "גימבל ומונופוד", "q": "a camera gimbal stabilizer", "img": "img/ab5759c8eae8d6.webp"}, {"n": "כלוב, זרועות וריג למצלמה", "q": "a camera cage rig with handles", "img": "img/24016f76e35086.webp"}, {"n": "מסך שטח למצלמה", "q": "a field monitor for a camera", "img": "img/62afc9379ab05d.webp"}, {"n": "תיק צילום / תיק הפקה", "q": "a camera bag", "img": "img/e37562da037d50.webp"}, {"n": "קייסים קשיחים", "q": "a hard protective equipment case", "img": "img/28a8dcaed0bc78.webp"}, {"n": "מחשב נייד (בסגנון Apple)", "q": "a MacBook laptop", "img": "img/f4273476190a6f.webp"}, {"n": "מחשב נייד HP EliteBook 640 G11", "q": "an HP laptop", "img": "img/586d1eae410285.webp"}, {"n": "מחשב נייד Dell Latitude 5450", "q": "a Dell laptop", "img": "img/01c2475bbc5257.webp"}, {"n": "טאבלט (Apple iPad Air)", "q": "an iPad tablet", "img": "img/c5bdede9794c55.webp"}, {"n": "מסך מחשב (בסגנון LG)", "q": "a computer monitor", "img": "img/d26d8e8463bd0f.webp"}, {"n": "טלוויזיה (LCD / OLED)", "q": "a flat screen television", "img": "img/df0305ddcad710.webp"}, {"n": "מדפסת לייזר משולבת (Samsung)", "q": "a laser printer", "img": "img/d7bd9f6d9f5535.webp"}, {"n": "מכונת גריסה משרדית", "q": "a paper shredder", "img": "img/726f13c045999b.webp"}, {"n": "מיני מקרר (Midea WHD-113FSS1)", "q": "a mini fridge", "img": "img/e9b562aa8b69c3.webp"}, {"n": "מכונת אספרסו אוטומטית", "q": "an automatic espresso coffee machine", "img": "img/bbb901634ca9ff.webp"}, {"n": "קומקום חשמלי", "q": "an electric kettle", "img": "img/5c1f0e6be97174.webp"}, {"n": "מיקסר מקצועי (Stand Mixer)", "q": "a stand mixer", "img": "img/a0e7610ecd8554.webp"}, {"n": "מיקרוגל (Midea MMC07S2AST)", "q": "a microwave oven", "img": "img/6ce82fdb9dfa63.webp"}, {"n": "סוללות מקצועיות (V-Mount)", "q": "a V-mount camera battery", "img": "img/5afaca268af7ce.webp"}, {"n": "מטענים, ספקי כוח ומתאמים", "q": "chargers and power supply adapters", "img": "img/61e46f56eac658.webp"}, {"n": "כבלי תקשורת וצילום", "q": "cables and connectors", "img": "img/590aec72300f43.webp"}, {"n": "מתאמים, מפצלים וממירים", "q": "small adapters and splitters", "img": "img/c138afd9cc1e4a.webp"}];
+const MODEL = "Xenova/siglip-base-patch16-224", KEY = "pid-text-v1";
+const $ = id => document.getElementById(id);
+const dlg = $("pid"), st = $("pidSt"), bar = $("pidBar");
+let T, proc, vis, TX = null, ready = false, booting = null, pending = null, lastFocus = null, ord = [];
+const norm = v => { let n = 0; for (const x of v) n += x * x; n = Math.sqrt(n); return Array.from(v, x => x / n); };
+const prog = {};
+function onProg(p){ if (p.status === "progress" && p.file){ prog[p.file] = [p.loaded, p.total]; let a = 0, b = 0; for (const k in prog){ a += prog[k][0]; b += prog[k][1]; } bar.style.width = (b ? a / b * 100 : 0) + "%"; st.textContent = "מוריד את מודל הזיהוי (פעם אחת)… " + Math.round(a / 1e6) + " / " + Math.round(b / 1e6) + "MB"; } }
+function boot(){ if (booting) return booting; booting = (async () => {
+  try {
+    T = await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2");
+    T.env.allowLocalModels = false;
+    proc = await T.AutoProcessor.from_pretrained(MODEL);
+    vis = await T.SiglipVisionModel.from_pretrained(MODEL, {dtype:"q8", progress_callback:onProg});
+    try { const c = JSON.parse(localStorage.getItem(KEY) || "null"); if (c && c.length === CAT.length) TX = c; } catch(e){}
+    if (!TX){
+      st.textContent = "מכין את רשימת המכשירים (פעם אחת)…";
+      const tok = await T.AutoTokenizer.from_pretrained(MODEL);
+      const txm = await T.SiglipTextModel.from_pretrained(MODEL, {dtype:"q8", progress_callback:onProg});
+      const o = await txm(tok(CAT.map(c => "a photo of " + c.q), {padding:"max_length", truncation:true}));
+      const d = o.pooler_output.dims[1]; TX = CAT.map((_, i) => norm(o.pooler_output.data.slice(i * d, (i + 1) * d)).map(x => +x.toFixed(4)));
+      try { localStorage.setItem(KEY, JSON.stringify(TX)); } catch(e){}
+    }
+    ready = true; bar.style.width = "100%"; st.textContent = "מוכן. צלמו מכשיר או בחרו תמונה.";
+    if (pending){ const f = pending; pending = null; run(f); }
+  } catch(e){ booting = null; st.textContent = "לא הצלחתי לטעון את מודל הזיהוי. בדקו את החיבור לאינטרנט ונסו שוב."; console.error(e); }
+})(); return booting; }
+function softmax(a, t){ const m = Math.max(...a), e = a.map(x => Math.exp((x - m) * t)), s = e.reduce((p, c) => p + c, 0); return e.map(x => x / s); }
+async function run(file){
+  const url = URL.createObjectURL(file); $("pidPic").src = url; $("pidOut").hidden = true;
+  if (!ready){ pending = file; st.textContent = "התמונה התקבלה. ממתין לסיום טעינת המודל…"; boot(); return; }
+  st.textContent = "מזהה…";
+  try {
+    const o = await vis(await proc(await T.RawImage.fromURL(url))); const u = norm(o.pooler_output.data);
+    const p = softmax(TX.map(a => { let s = 0; for (let j = 0; j < a.length; j++) s += a[j] * u[j]; return s; }), 30);
+    ord = p.map((x, i) => [x, i]).sort((a, b) => b[0] - a[0]); show(ord); st.textContent = "אפשר לצלם מכשיר נוסף.";
+  } catch(e){ st.textContent = "לא הצלחתי לקרוא את התמונה. נסו תמונה אחרת."; console.error(e); }
+}
+function show(o){
+  const [p0, i0] = o[0], sure = p0 >= 0.35, v = $("pidV");
+  $("pidBImg").src = CAT[i0].img; $("pidBN").textContent = CAT[i0].n; $("pidBest").dataset.i = i0;
+  v.className = "pid-v " + (sure ? "hi" : "lo"); v.textContent = (sure ? "זוהה" : "לא בטוח") + " · " + Math.round(p0 * 100) + "% התאמה";
+  $("pidAH").textContent = sure ? "אפשרויות קרובות:" : "אולי זה אחד מאלה:";
+  const box = $("pidAlts"); box.innerHTML = "";
+  o.slice(1, sure ? 3 : 5).forEach(([p, i]) => { const b = document.createElement("button"); b.type = "button"; b.className = "pid-alt"; b.dataset.i = i;
+    b.innerHTML = '<img alt="" src="' + CAT[i].img + '"><span></span><b>' + Math.round(p * 100) + '%</b>'; b.querySelector("span").textContent = CAT[i].n;
+    b.onclick = () => openDev(i); box.appendChild(b); });
+  $("pidOut").hidden = false;
+}
+function openDev(i){
+  const D = window.__DEVS || [], hit = D.find(o => o.dev && o.dev.img === CAT[i].img); if (!hit) return;
+  close();
+  const sp = document.getElementById("sp");
+  if (sp && !sp.hidden && window.__enterCatalog) window.__enterCatalog(hit.dev.id);
+  else if (window.__catalogOpen) window.__catalogOpen(hit.dev.id);
+}
+function open(){ lastFocus = document.activeElement; dlg.hidden = false; document.documentElement.style.overflow = "hidden"; $("pidX").focus(); boot(); }
+function close(){ dlg.hidden = true; document.documentElement.style.overflow = ""; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+$("pidBtn").onclick = open;
+const spEl = document.getElementById("sp"); const syncSp = () => $("pidBtn").classList.toggle("on-sp", !!(spEl && !spEl.hidden)); syncSp(); if (spEl) new MutationObserver(syncSp).observe(spEl, {attributes:true, attributeFilter:["hidden"]}); $("pidX").onclick = close;
+$("pidBest").onclick = () => openDev(+$("pidBest").dataset.i);
+dlg.addEventListener("click", e => { if (e.target === dlg) close(); });
+addEventListener("keydown", e => { if (e.key === "Escape" && !dlg.hidden) close(); });
+["pidCam", "pidGal"].forEach(id => $(id).addEventListener("change", e => { const f = e.target.files && e.target.files[0]; if (f) run(f); e.target.value = ""; }));
+</script>
 
 </body></html>
