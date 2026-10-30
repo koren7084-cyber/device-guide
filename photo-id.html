@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>זיהוי מכשיר מצילום</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@500;700;800&family=Rubik:wght@400;500;700&display=swap">
+<style>
+/* Layout: one column scanner — capture buttons on top, the photo and its best match side by side below, other guesses as a short list. Blueprint navy + safety orange, matching the device guide. */
+:root{
+  --bg:#0B2340; --panel:#0F2A4C; --panel2:#13345C; --line:rgba(170,205,255,.28);
+  --ink:#E6F0FF; --soft:#A9C4E8; --accent:#FF7A1A; --accent-ink:#1A0E04; --ok:#3FCB7E; --warn:#F5C451;
+  --head:"Heebo","Rubik",Arial,sans-serif; --body:"Rubik","Segoe UI",Arial,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  background-image:linear-gradient(rgba(124,183,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(124,183,255,.07) 1px,transparent 1px);background-size:28px 28px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(32px + env(safe-area-inset-bottom,0px))}
+[hidden]{display:none!important}
+main{max-width:860px;margin:0 auto;display:grid;gap:18px}
+header{display:grid;gap:6px}
+.k{font:500 12px var(--body);letter-spacing:.06em;color:var(--accent)}
+h1{margin:0;font:800 clamp(28px,6vw,40px)/1.1 var(--head);text-wrap:balance}
+header p{margin:0;color:var(--soft);max-width:60ch}
+.cap{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 20px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:700 16px var(--head);cursor:pointer}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn svg{width:22px;height:22px}
+#status{display:grid;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:14px;color:var(--soft)}
+.bar{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+#out{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:14px;align-items:start}
+@media (max-width:640px){#out{grid-template-columns:1fr}}
+.shot{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;display:grid;gap:6px}
+.shot img{width:100%;max-height:340px;object-fit:contain;border-radius:4px;background:#06172b}
+.shot small{color:var(--soft)}
+.res{display:grid;gap:10px;min-width:0}
+.best{background:var(--panel2);border:1px solid var(--line);border-inline-start:5px solid var(--accent);border-radius:6px;padding:12px;display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center}
+.best img{width:96px;height:96px;object-fit:contain;background:#fff;border-radius:4px}
+.best h2{margin:0;font:800 22px/1.2 var(--head);text-wrap:balance}
+.verdict{font:700 13px var(--body);display:inline-flex;gap:6px;align-items:center}
+.verdict.hi{color:var(--ok)} .verdict.lo{color:var(--warn)}
+.meter{height:8px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;background:var(--accent)}
+.alts{display:grid;gap:6px}
+.alts h3{margin:4px 0 0;font:700 14px var(--head);color:var(--soft)}
+.alt{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 10px;color:var(--ink);font:500 15px var(--body);text-align:start;cursor:pointer;width:100%}
+.alt img{width:52px;height:52px;object-fit:contain;background:#fff;border-radius:4px}
+.alt b{font:500 13px var(--body);color:var(--soft);font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--soft);border-top:1px dashed var(--line);padding-top:12px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="k">מאגר מכשירים · דמו</span>
+    <h1>זיהוי מכשיר מצילום</h1>
+    <p>מצלמים מכשיר, והמערכת מחפשת אותו בין 57 המכשירים שבמאגר. אם היא לא בטוחה, היא מציגה כמה אפשרויות לבחירה.</p>
+  </header>
+  <div class="cap">
+    <label class="btn pri" for="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>צילום מכשיר</label>
+    <input id="cam" type="file" accept="image/*" capture="environment" hidden>
+    <label class="btn" for="gal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/></svg>תמונה מהגלריה</label>
+    <input id="gal" type="file" accept="image/*" hidden>
+  </div>
+  <div id="status" aria-live="polite"><span id="sTxt">טוען את מודל הזיהוי…</span><div class="bar"><i id="sBar"></i></div></div>
+  <section id="out" hidden>
+    <div class="shot"><img id="pic" alt="התמונה שצילמתם"><small>התמונה שלכם</small></div>
+    <div class="res">
+      <div class="best">
+        <img id="bImg" alt="">
+        <div>
+          <span id="bVer" class="verdict"></span>
+          <h2 id="bName"></h2>
+          <div class="meter"><i id="bMeter"></i></div>
+        </div>
+      </div>
+      <div class="alts"><h3 id="altH">אולי זה:</h3><div id="alts" class="alts"></div></div>
+    </div>
+  </section>
+  <p class="note">הזיהוי רץ בתוך הטלפון. התמונה לא נשלחת לשום שרת ולא נשמרת. בפעם הראשונה המודל יורד פעם אחת (בערך 200MB, עדיף ב-WiFi), ואחר כך הוא שמור בדפדפן.</p>
+</main>
+<script type="module">
+const CAT = [{"n": "מברגה אלחוטית", "q": "a cordless drill driver", "img": "img/8deebcdce76e56.webp"}, {"n": "מברגת אימפקט Makita DTD172", "q": "a cordless impact driver", "img": "img/d17048fd815d8f.webp"}, {"n": "מברגת גבס Makita FS4000", "q": "a drywall screw gun with a long nose", "img": "img/feae92503d2023.webp"}, {"n": "מקדחת פטיש אלחוטית (SDS)", "q": "an SDS rotary hammer drill", "img": "img/d94f72a6ad0df2.webp"}, {"n": "פטישון Makita HR2630", "q": "a corded rotary hammer drill", "img": "img/c3a1bbd9d93371.webp"}, {"n": "משחזת זוויתית (Makita)", "q": "an angle grinder", "img": "img/07d99104127d7d.webp"}, {"n": "מסור עגול אלחוטי (Makita)", "q": "a circular saw", "img": "img/49b4be1090961b.webp"}, {"n": "מסור אנכי Makita DJV184", "q": "a jigsaw", "img": "img/10b6f689dda4f2.webp"}, {"n": "כלי חיתוך רוטט (Makita)", "q": "an oscillating multi-tool", "img": "img/b0b293cbcd1b6b.webp"}, {"n": "טרימר נטען Makita DRT50", "q": "a compact router trimmer", "img": "img/5334b83f3409a4.webp"}, {"n": "מלטשת פוליש Makita 9237CB", "q": "a car polisher buffer machine", "img": "img/c4b5aae8c1eaf1.webp"}, {"n": "אקדח מסמרים Makita DPT353", "q": "a pin nailer nail gun", "img": "img/454d895fb64158.webp"}, {"n": "מפוח/שואב Makita DUB185", "q": "a cordless leaf blower", "img": "img/8881eec41dec84.webp"}, {"n": "חרמש נטען Makita DUR192", "q": "a cordless string trimmer for grass", "img": "img/e952280af8997e.webp"}, {"n": "גוזם גדר חיה Makita DUH523", "q": "a cordless hedge trimmer", "img": "img/654017cc3779fb.webp"}, {"n": "קומפרסור קטן (מדחס אוויר)", "q": "a small portable air compressor", "img": "img/68d32a4e452d4f.webp"}, {"n": "מדחס אוויר 50 ליטר", "q": "a large air compressor with a 50 liter tank", "img": "img/c65f9d6529426c.webp"}, {"n": "מלחם (תחנת הלחמה)", "q": "a soldering station with a soldering iron", "img": "img/33bd99fbf93c6f.webp"}, {"n": "מכונת ריתוך אינוורטר (MMA)", "q": "an inverter welding machine", "img": "img/01afe73419ac2e.webp"}, {"n": "מיקרופון דינמי מקצועי", "q": "a handheld dynamic microphone", "img": "img/bd64aaa2e01415.webp"}, {"n": "מצלמה ללא מראה (Mirrorless)", "q": "a mirrorless digital camera", "img": "img/b927a007840665.webp"}, {"n": "מצלמת שידור כתף (ENG)", "q": "a shoulder broadcast video camera", "img": "img/e73fd9e735a04f.webp"}, {"n": "יחידת שידור חי (Bonded Cellular)", "q": "a bonded cellular live video transmitter backpack unit", "img": "img/fb311f0b9bfc71.webp"}, {"n": "נתב / מודם סלולרי", "q": "a 4G cellular router modem", "img": "img/f639b7db2cb12d.webp"}, {"n": "פלאש חיצוני למצלמה", "q": "a camera flash speedlight", "img": "img/3ab7d95e5a8878.webp"}, {"n": "פנס תאורה לצילום (Fresnel)", "q": "a fresnel studio spotlight", "img": "img/1c98ff76b62b89.webp"}, {"n": "רמקול בלוטות' נייד", "q": "a portable bluetooth speaker", "img": "img/128fb3b298926b.webp"}, {"n": "חצובה מקצועית לצילום", "q": "a professional video tripod", "img": "img/0a2055f291707c.webp"}, {"n": "משדר ומקלט וידאו אלחוטי", "q": "a wireless video transmitter and receiver", "img": "img/af572d2b7c576e.webp"}, {"n": "אנטנות וציוד RF", "q": "RF antennas", "img": "img/c170f6690cc912.webp"}, {"n": "מצלמת PTZ", "q": "a PTZ robotic camera", "img": "img/221a072f4524aa.webp"}, {"n": "עדשות צילום", "q": "camera lenses", "img": "img/b85529b02defb4.webp"}, {"n": "פאנל תאורת LED", "q": "an LED light panel", "img": "img/7d868adc02685e.webp"}, {"n": "מערכת מיקרופון אלחוטית", "q": "a wireless microphone system with receiver", "img": "img/541229c8afb499.webp"}, {"n": "מיקסר ומקליט קול", "q": "an audio mixer and recorder", "img": "img/714b678ddfe248.webp"}, {"n": "גימבל ומונופוד", "q": "a camera gimbal stabilizer", "img": "img/ab5759c8eae8d6.webp"}, {"n": "כלוב, זרועות וריג למצלמה", "q": "a camera cage rig with handles", "img": "img/24016f76e35086.webp"}, {"n": "מסך שטח למצלמה", "q": "a field monitor for a camera", "img": "img/62afc9379ab05d.webp"}, {"n": "תיק צילום / תיק הפקה", "q": "a camera bag", "img": "img/e37562da037d50.webp"}, {"n": "קייסים קשיחים", "q": "a hard protective equipment case", "img": "img/28a8dcaed0bc78.webp"}, {"n": "מחשב נייד (בסגנון Apple)", "q": "a MacBook laptop", "img": "img/f4273476190a6f.webp"}, {"n": "מחשב נייד HP EliteBook 640 G11", "q": "an HP laptop", "img": "img/586d1eae410285.webp"}, {"n": "מחשב נייד Dell Latitude 5450", "q": "a Dell laptop", "img": "img/01c2475bbc5257.webp"}, {"n": "טאבלט (Apple iPad Air)", "q": "an iPad tablet", "img": "img/c5bdede9794c55.webp"}, {"n": "מסך מחשב (בסגנון LG)", "q": "a computer monitor", "img": "img/d26d8e8463bd0f.webp"}, {"n": "טלוויזיה (LCD / OLED)", "q": "a flat screen television", "img": "img/df0305ddcad710.webp"}, {"n": "מדפסת לייזר משולבת (Samsung)", "q": "a laser printer", "img": "img/d7bd9f6d9f5535.webp"}, {"n": "מכונת גריסה משרדית", "q": "a paper shredder", "img": "img/726f13c045999b.webp"}, {"n": "מיני מקרר (Midea WHD-113FSS1)", "q": "a mini fridge", "img": "img/e9b562aa8b69c3.webp"}, {"n": "מכונת אספרסו אוטומטית", "q": "an automatic espresso coffee machine", "img": "img/bbb901634ca9ff.webp"}, {"n": "קומקום חשמלי", "q": "an electric kettle", "img": "img/5c1f0e6be97174.webp"}, {"n": "מיקסר מקצועי (Stand Mixer)", "q": "a stand mixer", "img": "img/a0e7610ecd8554.webp"}, {"n": "מיקרוגל (Midea MMC07S2AST)", "q": "a microwave oven", "img": "img/6ce82fdb9dfa63.webp"}, {"n": "סוללות מקצועיות (V-Mount)", "q": "a V-mount camera battery", "img": "img/5afaca268af7ce.webp"}, {"n": "מטענים, ספקי כוח ומתאמים", "q": "chargers and power supply adapters", "img": "img/61e46f56eac658.webp"}, {"n": "כבלי תקשורת וצילום", "q": "cables and connectors", "img": "img/590aec72300f43.webp"}, {"n": "מתאמים, מפצלים וממירים", "q": "small adapters and splitters", "img": "img/c138afd9cc1e4a.webp"}];
+const MODEL = "Xenova/siglip-base-patch16-224", KEY = "pid-text-v1";
+const $ = id => document.getElementById(id);
+const sTxt = $("sTxt"), sBar = $("sBar");
+let T, proc, vis, TX = null, IMG = null, ready = false, pending = null;
+const norm = v => { let n = 0; for (const x of v) n += x * x; n = Math.sqrt(n); return Array.from(v, x => x / n); };
+const prog = {};
+function onProg(p){ if (p.status === "progress" && p.file){ prog[p.file] = [p.loaded, p.total]; let a = 0, b = 0; for (const k in prog){ a += prog[k][0]; b += prog[k][1]; } sBar.style.width = (b ? a / b * 100 : 0) + "%"; sTxt.textContent = "מוריד את מודל הזיהוי… " + Math.round(a / 1e6) + " / " + Math.round(b / 1e6) + "MB"; } }
+async function boot(){
+  try {
+    T = await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2");
+    T.env.allowLocalModels = false;
+    proc = await T.AutoProcessor.from_pretrained(MODEL);
+    vis = await T.SiglipVisionModel.from_pretrained(MODEL, {dtype:"q8", progress_callback:onProg});
+    try { const c = JSON.parse(localStorage.getItem(KEY) || "null"); if (c && c.length === CAT.length) TX = c; } catch(e){}
+    if (!TX){
+      sTxt.textContent = "מכין את רשימת המכשירים (פעם אחת)…";
+      const tok = await T.AutoTokenizer.from_pretrained(MODEL);
+      const txm = await T.SiglipTextModel.from_pretrained(MODEL, {dtype:"q8", progress_callback:onProg});
+      const o = await txm(tok(CAT.map(c => "a photo of " + c.q), {padding:"max_length", truncation:true}));
+      const d = o.pooler_output.dims[1]; TX = CAT.map((_, i) => norm(o.pooler_output.data.slice(i * d, (i + 1) * d)).map(x => +x.toFixed(4)));
+      try { localStorage.setItem(KEY, JSON.stringify(TX)); } catch(e){}
+    }
+    ready = true; sBar.style.width = "100%"; sTxt.textContent = "מוכן. צלמו מכשיר או בחרו תמונה.";
+    if (pending){ const f = pending; pending = null; run(f); }
+  } catch(e){ sTxt.textContent = "לא הצלחתי לטעון את מודל הזיהוי. בדקו חיבור לאינטרנט ונסו לרענן."; console.error(e); }
+}
+async function embed(src){ const im = await T.RawImage.fromURL(src); const o = await vis(await proc(im)); return norm(o.pooler_output.data); }
+function softmax(a, t){ const m = Math.max(...a), e = a.map(x => Math.exp((x - m) * t)), s = e.reduce((p, c) => p + c, 0); return e.map(x => x / s); }
+async function run(file){
+  const url = URL.createObjectURL(file); $("pic").src = url; $("out").hidden = true;
+  if (!ready){ pending = file; sTxt.textContent = "התמונה התקבלה. ממתין לסיום טעינת המודל…"; return; }
+  sTxt.textContent = "מזהה…";
+  const u = await embed(url);
+  const dot = a => { let s = 0; for (let j = 0; j < a.length; j++) s += a[j] * u[j]; return s; };
+  const p = softmax(TX.map(dot), 30);
+  const ord = p.map((x, i) => [x, i]).sort((a, b) => b[0] - a[0]);
+  show(ord);
+  sTxt.textContent = "אפשר לצלם מכשיר נוסף.";
+}
+function show(ord){
+  const [p0, i0] = ord[0], sure = p0 >= 0.35;
+  $("bImg").src = CAT[i0].img; $("bName").textContent = CAT[i0].n; $("bMeter").style.width = Math.round(p0 * 100) + "%";
+  const v = $("bVer"); v.className = "verdict " + (sure ? "hi" : "lo"); v.textContent = sure ? "זוהה · " + Math.round(p0 * 100) + "% התאמה" : "לא בטוח · " + Math.round(p0 * 100) + "% התאמה";
+  $("altH").textContent = sure ? "אפשרויות קרובות:" : "אולי זה אחד מאלה:";
+  const box = $("alts"); box.innerHTML = "";
+  ord.slice(1, sure ? 3 : 5).forEach(([p, i]) => { const b = document.createElement("button"); b.type = "button"; b.className = "alt";
+    b.innerHTML = '<img alt="" src="' + CAT[i].img + '"><span></span><b>' + Math.round(p * 100) + '%</b>'; b.querySelector("span").textContent = CAT[i].n;
+    b.onclick = () => { const rest = ord.filter(x => x[1] !== i); show([[p, i], ...rest]); }; box.appendChild(b); });
+  $("out").hidden = false;
+}
+["cam", "gal"].forEach(id => $(id).addEventListener("change", e => { const f = e.target.files && e.target.files[0]; if (f) run(f); e.target.value = ""; }));
+boot();
+</script>
+</body>
+</html>
