@@ -3092,7 +3092,7 @@ function renderGrid(){
   });
   if (!list.length){ grid.innerHTML = '<div class="cat-empty">לא נמצא ציוד שמתאים לחיפוש.</div>'; return; }
   grid.innerHTML = list.map(function(o){
-    var d = o.dev, n = images(d).length, has360 = (d.angles || []).length > 1;
+    var d = o.dev, n = images(d).length, has360 = (d.angles || []).length > 1 || !!(window.__SPIN || {})[d.id];
     return '<button class="ccard" style="--k:' + (k++) + '" data-id="' + esc(d.id) + '">' +
       '<div class="cimg"><img alt="" loading="lazy" decoding="async" src="' + ((window.__TH && window.__TH[d.img]) || d.img) + '">' + (has360 ? '<span class="badge360">360°</span>' : '') + '</div>' +
       '<div class="cmeta"><span class="cname">' + esc(d.name) + '</span><span class="csub">' + esc(o.cat.name) + ' · ' + esc(o.type.name) + '</span>' +
@@ -3103,11 +3103,26 @@ grid.addEventListener("click", function(e){ var b = e.target.closest(".ccard"); 
 
 /* ---------- device page ---------- */
 var cur = null, frames = [], frame = 0, mode = "photo", mainImg = null, curThumb = 0;
+window.__SPIN={"dell-laptop-demo": {"dir": "img/spin/dell-laptop-demo-d28194a3bb", "n": 72, "src": "תצוגת התלת־ממד הרשמית של Dell", "url": "https://content.hmxmedia.com/latitude-5450-laptop/index.html", "ratio": 1.6612}, "makita-dtd172": {"dir": "img/spin/makita-dtd172-2cb70356e8", "n": 24, "src": "צילומי 360 של Makita (דגם XDT19 – הגרסה האמריקאית של DTD172)", "url": "https://makitatools.com/products/details/XDT19Z", "ratio": 1.0429}, "makita-drt50": {"dir": "img/spin/makita-drt50-90d656aebf", "n": 24, "src": "צילומי 360 של Makita (דגם XTR01 – הגרסה האמריקאית של DRT50)", "url": "https://makitatools.com/products/details/XTR01Z", "ratio": 0.727}, "makita-dpt353": {"dir": "img/spin/makita-dpt353-b6eee926d1", "n": 24, "src": "צילומי 360 של Makita (דגם XTP02 – הגרסה האמריקאית של DPT353)", "url": "https://makitatools.com/products/details/XTP02Z", "ratio": 1.0237}};
+var spinOn = false, spinTimer = null;
+function stopSpin(){ if (spinTimer){ clearInterval(spinTimer); spinTimer = null; } }
+function spinPrep(){
+  frames.forEach(function(u){ var im = new Image(); im.src = u; });
+  stopSpin(); var t0 = Date.now(), ticks = 0;
+  spinTimer = setInterval(function(){
+    if (mode !== "360" || !mainImg){ stopSpin(); return; }
+    if (Date.now() - t0 < 700) return;
+    frame = (frame + 1) % frames.length; mainImg.style.opacity = "1"; mainImg.src = frames[frame];
+    document.getElementById("devCap").textContent = "360° · זווית " + (frame + 1) + " מתוך " + frames.length;
+    if (++ticks >= frames.length) stopSpin();
+  }, Math.round(6500 / frames.length));
+}
 function openDevice(id, push){
   var o = byId[id]; if (!o) return;
   cur = o;
   var d = o.dev, imgs = images(d), angles = (d.angles || []).filter(Boolean);
-  frames = angles.length > 1 ? angles : [];
+  var SPN = (window.__SPIN || {})[d.id]; spinOn = !!SPN; stopSpin();
+  frames = SPN ? Array.from({length:SPN.n}, function(_, k){ return SPN.dir + "/" + (k < 10 ? "0" : "") + k + ".webp"; }) : (angles.length > 1 ? angles : []);
   mode = "photo"; frame = 0; curThumb = 0;
   var A = d.angles || [], views = [{label:"קדמי", src:d.img}];
   if (A.length === 8 && d.id === "fresnel-light-demo"){ views.push({label:"צד", src:A[2]}); views.push({label:"אחורי", src:A[4]}); }
@@ -3119,7 +3134,7 @@ function openDevice(id, push){
   (d.extraViews || []).forEach(function(x){ views.push({label:x.label, src:x.src}); });
   var XV = !window.__XRAY_ON ? [] : d.xrayViews || (d.xrayImg ? [{label:"תמונת שיקוף", src:d.xrayImg, marks:d.xrayMarks, note:d.xrayNote}] : []);
   XV.forEach(function(x, k){ views.push({label:x.label, mode:"xray", xi:k, th:x.src, n:(x.marks || []).length}); });
-  if (frames.length) views.push({label:"360°", mode:"360"});
+  if (frames.length) views.push({label: spinOn ? "סיבוב 360° מלא" : "360°", mode:"360"});
   dev._views = views;
   var CUTD = (window.__CUT || {})[d.id], LCD = (window.__LC || {})[d.id] || {};
   var FXD = (window.__FIX || {})[d.id] || {}, PPD = (window.__PPH || {})[d.id] || {};
@@ -3284,6 +3299,7 @@ function setMain(i){
   dev.querySelectorAll("#devThumbs button").forEach(function(b){ b.setAttribute("aria-current", +b.dataset.i === i ? "true" : "false"); });
 }
 function setMode(m, xi){
+  stopSpin();
   var mEl = document.getElementById("devMain"); mEl.classList.toggle("is-cut", m === "cut");
   if (m !== "cut" && window.cutSel) cutSel(null);
   if (m === "cut"){
@@ -3305,7 +3321,7 @@ function setMode(m, xi){
   main.classList.toggle("is360", m === "360");
   document.getElementById("devHint").hidden = m !== "360";
   document.getElementById("devTap").hidden = m === "360";
-  if (m === "360"){ frame = 0; fadeTo(frames[0]); document.getElementById("devCap").textContent = "360° · זווית 1 מתוך " + frames.length; pressView(dev._views.length - 1); dev.querySelectorAll("#devThumbs button").forEach(function(b){ b.setAttribute("aria-current", "false"); }); }
+  if (m === "360"){ frame = 0; fadeTo(frames[0]); document.getElementById("devCap").textContent = spinOn ? "סיבוב 360° · " + (window.__SPIN[cur.dev.id].src) : "360° · זווית 1 מתוך " + frames.length; if (spinOn) spinPrep(); pressView(dev._views.length - 1); dev.querySelectorAll("#devThumbs button").forEach(function(b){ b.setAttribute("aria-current", "false"); }); }
   else setMain(curThumb);
 }
 function wireDevice(){
@@ -3338,13 +3354,14 @@ function wireDevice(){
   });
   main.addEventListener("pointerdown", function(e){
     if (mode !== "360") return;
+    stopSpin(); clearTimeout(fadeTo.t); mainImg.style.opacity = "1";
     drag = {x:e.clientX}; acc = 0;
     try{ main.setPointerCapture(e.pointerId); }catch(err){}
   });
   main.addEventListener("pointermove", function(e){
     if (!drag) return;
     acc += e.clientX - drag.x; drag.x = e.clientX;
-    var step = Math.max(18, main.clientWidth / (frames.length * 1.6));
+    var step = spinOn ? Math.max(3, main.clientWidth * 0.9 / frames.length) : Math.max(18, main.clientWidth / (frames.length * 1.6));
     while (Math.abs(acc) >= step){
       frame = (frame + (acc > 0 ? 1 : -1) + frames.length) % frames.length;
       acc += acc > 0 ? -step : step;
@@ -3356,6 +3373,7 @@ function wireDevice(){
   main.addEventListener("pointerup", end); main.addEventListener("pointercancel", end);
 }
 function backToList(){
+  stopSpin();
   cat.classList.remove("cat-device");
   dev.innerHTML = ""; cur = null;
   cat.scrollTop = 0;
