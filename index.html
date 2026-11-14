@@ -3142,6 +3142,7 @@ function openDevice(id, push){
     var fx = FXD[p.id]; if (fx) Object.keys(fx).forEach(function(k){ if (!p[k]) p[k] = fx[k]; });
     if (PPD[p.id]){ d.photoMap = d.photoMap || {}; if (!d.photoMap[p.photo || p.id]) d.photoMap[p.photo || p.id] = PPD[p.id]; } var PXD=(window.__PPX||{})[d.id]||{}; if (PXD[p.id]){ d.photoMap=d.photoMap||{}; p.photo='px_'+p.id; d.photoMap[p.photo]=PXD[p.id]; } });
   if (CUTD){ views.unshift({label:"חתך · לחצו על חלק", mode:"cut", th:CUTD.img, n:Object.keys(CUTD.marks).length}); mode = "cut"; }
+  if (spinOn){ var vi360 = views.findIndex(function(v){ return v.mode === "360"; }); if (vi360 > 0) views.unshift(views.splice(vi360, 1)[0]); }
   var SMD = (window.__SIMPLE || {})[d.id] || {}, SMP = SMD.parts || {};
   var simple = "";
   if (SMD.flow && SMD.flow.length) simple += '<div class="dev-sec sm-flow"><h2>איך זה עובד – בקצרה</h2><ol class="sm-chain">' + SMD.flow.map(function(f, i){ return '<li><span class="sm-n">' + (i + 1) + '</span><b>' + esc(f.t) + '</b><small>' + esc(f.d) + '</small></li>'; }).join('') + '</ol></div>';
@@ -3223,6 +3224,7 @@ function openDevice(id, push){
   cat.scrollTop = 0;
   wireDevice();
   if (CUTD) { setMode("cut"); wireCut(); }
+  if (spinOn) setMode("360");
 }
 var cutCur = null;
 function fitCut(){
@@ -3304,7 +3306,7 @@ function setMode(m, xi){
   if (m !== "cut" && window.cutSel) cutSel(null);
   if (m === "cut"){
     mode = "cut"; mEl.classList.remove("is360"); mEl.classList.remove("is-xray"); if (window.__xray) window.__xray.show(false, 0);
-    document.getElementById("devHint").hidden = true; document.getElementById("devTap").hidden = false; pressView(0);
+    document.getElementById("devHint").hidden = true; document.getElementById("devTap").hidden = false; pressView(dev._views.findIndex(function(v){ return v.mode === "cut"; }));
     requestAnimationFrame(fitCut); return;
   }
   var wasX = mode === "xray";
@@ -3321,7 +3323,7 @@ function setMode(m, xi){
   main.classList.toggle("is360", m === "360");
   document.getElementById("devHint").hidden = m !== "360";
   document.getElementById("devTap").hidden = m === "360";
-  if (m === "360"){ frame = 0; fadeTo(frames[0]); document.getElementById("devCap").textContent = spinOn ? "סיבוב 360° · " + (window.__SPIN[cur.dev.id].src) : "360° · זווית 1 מתוך " + frames.length; if (spinOn) spinPrep(); pressView(dev._views.length - 1); dev.querySelectorAll("#devThumbs button").forEach(function(b){ b.setAttribute("aria-current", "false"); }); }
+  if (m === "360"){ frame = 0; fadeTo(frames[0]); document.getElementById("devHint").textContent = spinOn ? "גררו לסיבוב · לחצו כדי לפתוח ולראות מה בפנים" : "גררו ימינה ושמאלה כדי לסובב"; document.getElementById("devCap").textContent = spinOn ? "סיבוב 360° · " + (window.__SPIN[cur.dev.id].src) : "360° · זווית 1 מתוך " + frames.length; if (spinOn) spinPrep(); pressView(dev._views.findIndex(function(v){ return v.mode === "360"; })); dev.querySelectorAll("#devThumbs button").forEach(function(b){ b.setAttribute("aria-current", "false"); }); }
   else setMain(curThumb);
 }
 function wireDevice(){
@@ -3348,7 +3350,7 @@ function wireDevice(){
   var tap = null;
   main.addEventListener("pointerdown", function(e){ tap = {x:e.clientX, y:e.clientY}; });
   main.addEventListener("click", function(e){
-    if (mode === "360" || mode === "xray" || mode === "cut" || !tap) return;
+    if ((mode === "360" && !spinOn) || mode === "xray" || mode === "cut" || !tap) return;
     if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10) return;
     openInteractive(cur.dev.id, true);
   });
